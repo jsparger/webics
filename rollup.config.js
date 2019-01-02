@@ -2,9 +2,11 @@ import commonjs from 'rollup-plugin-commonjs';
 import resolve from "rollup-plugin-node-resolve";
 
 export default {
-  entry: "index.js",
-  format: "umd",
-  moduleName: "webics",
+  input: 'index.js',
+  output: {
+    name: 'webics',
+    file: 'dist/webics.js',
+    format: 'umd',
+  },
   plugins: [resolve(), commonjs()],
-  dest: "dist/webics.js",
 };

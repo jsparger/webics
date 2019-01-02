@@ -10,8 +10,8 @@ Tone.Transport.bpm.value = 30;
 
 //a little reverb
 var reverb = new Tone.Freeverb({
-  "roomSize" : 0.45,
-  "wet" : 1.0
+  "roomSize" : 0.2,
+  "wet" : 0.9
 }).toMaster();
 
 // a pitch shift control
@@ -21,7 +21,7 @@ var reverb = new Tone.Freeverb({
 var synthSettings = {
   "oscillator": {
     // "detune": 0,
-    "type": "triangle",
+    "type": "sine",
     // "partials" : [2, 1, 2, 2],
     // "phase": 0,
     // "volume": 0
@@ -42,7 +42,7 @@ var synth = new Tone.Synth(synthSettings).connect(reverb);
 // create the sequence
 var seq = new Tone.Sequence(function(time, note){
 			synth.triggerAttackRelease(note, "8n", time);
-		}, ["E1", "F#2", "B2", "C#3", "D3", "F#4", "E1", "C#3", "B2", "F#4", "D4", "G#3"], "8n").start();
+		}, ["E1", "F2", "F#3", "G4", "D#3", "F4", "G#4", "A#4", "A3", "F#3", "D3", "A#2"], "8n").start();
 
 // start the "song"
 Tone.Transport.start("+0.1");
