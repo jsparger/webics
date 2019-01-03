@@ -89,7 +89,7 @@ class SoundWidget {
   constructor(options) {
     this.tempo = new Adapter(options['tempo']['conversion'], this._set_tempo.bind(this));
     this.effect = new Adapter(options['pitch']['conversion'], this._set_effect.bind(this));
-    this.pedal = new Tone.Chorus({spread: 60}).toMaster();
+    this.pedal = new Tone.PitchShift({spread: 60}).toMaster();
     // this.compressor = new Tone.Compressor().toMaster():
     // this.effect = new Tone.Filter({rolloff: -48, type: "bandpass"}).connect(this.compressor);
     // this.synth = new Tone.Synth().toMaster();
@@ -154,8 +154,15 @@ Tone.Transport.start();
 let speed_poller = new Poller("http://localhost:5000/pv/LabS-VIP:Chop-Drv-01:Spd", 1000, (json) => {
 	console.log(json.value);
   let fraction = json.value/7.0;
-	webics.widget.tempo.input = fraction > 0.01 ? fraction + 0.3 : 0;
+	widget.tempo.input = fraction > 0.01 ? fraction + 0.3 : 0;
 });
+
+// This works, but there is no phase control at the moment for chopper?
+// let phase_poller = new Poller("http://localhost:5000/pv/LabS-VIP:Chop-Drv-01:Pos", 1000, (json) => {
+// 	console.log(json.value);
+//   let fraction = json.value/360;
+// 	widget.pedal.pitch = fraction*12.0;
+// });
 
 export {
   // synth,
@@ -169,4 +176,5 @@ export {
   widget,
   Poller,
   speed_poller,
+  // phase_poller,
 };
