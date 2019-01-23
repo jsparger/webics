@@ -151,18 +151,40 @@ let widget = new SoundWidget({
 
 Tone.Transport.start();
 
-let speed_poller = new Poller("http://localhost:5000/pv/LabS-VIP:Chop-Drv-01:Spd", 1000, (json) => {
-	console.log(json.value);
-  let fraction = json.value/7.0;
+let grody_url = "http://localhost:5000/pv/";
+
+let speed_poller = new Poller(grody_url + "LabS-VIP:Chop-Drv-01:Spd", 1000, (json) => {
+	// console.log(json.value);
+  let fraction = json.value/14.0;
 	widget.tempo.input = fraction > 0.01 ? fraction + 0.3 : 0;
 });
 
 // This works, but there is no phase control at the moment for chopper?
-// let phase_poller = new Poller("http://localhost:5000/pv/LabS-VIP:Chop-Drv-01:Pos", 1000, (json) => {
-// 	console.log(json.value);
-//   let fraction = json.value/360;
-// 	widget.pedal.pitch = fraction*12.0;
-// });
+let phase_poller = new Poller(grody_url + "LabS-Utgard-VIP:Chop-Drv-0201:Chopper-Delay-SP", 1000, (json) => {
+  let ms = json.value/1000000.0;
+  let phase = ms/71.4;
+  let pitch = (phase-0.5)*12.0;
+  // console.log(phase, ": ", pitch, ": ", json.value);
+	widget.pedal.pitch = pitch
+});
+
+// use checkbox to enable chopper:
+let chopper_enable_toggle = document.getElementById("chopper_enable");
+chopper_enable_toggle.addEventListener("change", (event) => {
+    console.log("CHECKBOX: ", event.target.checked);
+    let pv = event.target.checked ? "LabS-VIP:Chop-Drv-01:Start_Cmd" : "LabS-VIP:Chop-Drv-01:Stop_Cmd";
+
+    fetch(grody_url + pv, {
+        method: "POST",
+        mode: 'cors',
+        headers: new Headers({
+          'content-type': 'application/json'
+        }),
+        body: JSON.stringify({"value": 1}),
+      }
+    );
+  }
+);
 
 export {
   // synth,
