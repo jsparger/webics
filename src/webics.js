@@ -1,4 +1,5 @@
 import Tone from 'tone';
+import {Draggable} from 'gsap/Draggable'
 
 // A quick demo
 //set the bpm and time signature first
@@ -168,6 +169,18 @@ let phase_poller = new Poller(grody_url + "LabS-Utgard-VIP:Chop-Drv-0201:Chopper
 	widget.pedal.pitch = pitch
 });
 
+let caput = function(pv, value) {
+  return fetch(grody_url + pv, {
+      method: "POST",
+      mode: 'cors',
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      body: JSON.stringify({"value": value}),
+    }
+  );
+}
+
 // use checkbox to enable chopper:
 let chopper_enable_toggle = document.getElementById("chopper_enable");
 chopper_enable_toggle.addEventListener("change", (event) => {
@@ -185,6 +198,42 @@ chopper_enable_toggle.addEventListener("change", (event) => {
     );
   }
 );
+
+
+
+// Chopper speed knob
+let speed_block = false;
+let speed_knob = document.getElementById("chopper_speed_knob");
+let speed_knob_draggable = Draggable.create(speed_knob, {
+  type:"rotation",
+  bounds:{minRotation:0, maxRotation:360},
+  onDrag: async function() {
+    if (speed_block) { return; }
+    speed_block = true;
+    let fraction = this.rotation/360;
+    let speed_sp = fraction*14;
+    console.log(this.x, fraction, speed_sp);
+    await caput("LabS-VIP:Chop-Drv-01:Spd_SP", speed_sp);
+    speed_block = false;
+  }
+})[0];
+
+// Chopper phase knob
+let phase_block = false;
+let phase_knob = document.getElementById("chopper_phase_knob");
+let speed_phase_draggable = Draggable.create(phase_knob, {
+  type:"rotation",
+  bounds:{minRotation:0, maxRotation:360},
+  onDrag: async function() {
+    if (phase_block) { return; }
+    phase_block = true;
+    let fraction = this.rotation/360;
+    let phase_sp = fraction*72e6;
+    console.log(this.x, fraction, phase_sp);
+    await caput("LabS-Utgard-VIP:Chop-Drv-0201:Chopper-Delay-SP", phase_sp);
+    phase_block = false;
+  }
+})[0];
 
 export {
   // synth,

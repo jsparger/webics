@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/jsparger/webics#readme",
   "dependencies": {
+    "gsap": "^2.0.2",
     "rollup": "^1.0.0",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^4.0.0",

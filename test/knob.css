@@ -1,0 +1,25 @@
+.knobBG, .knob {
+  /* position:absolute; */
+  background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/knob_Base.png');
+  width:355px;
+  height:355px;
+}
+.knob {
+  background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/knob_Spinner.png');
+  z-index: 1;
+}
+/* .box {
+  font-size:30px;
+  padding: 10px;
+}
+#content .box {
+
+  height: 335px;
+}
+#content{
+  position:absolute;
+  left:400px;
+  height:355px;
+  width:500px;
+  overflow-y: scroll;
+} */
