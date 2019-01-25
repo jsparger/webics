@@ -1,5 +1,5 @@
 import Tone from 'tone';
-import {Draggable} from 'gsap/Draggable'
+import {Draggable, TweenLite} from 'gsap/all'
 
 // A quick demo
 //set the bpm and time signature first
@@ -169,6 +169,17 @@ let phase_poller = new Poller(grody_url + "LabS-Utgard-VIP:Chop-Drv-0201:Chopper
 	widget.pedal.pitch = pitch
 });
 
+let caget = async function(pv) {
+  return fetch(grody_url + pv, {
+      method: "GET",
+      mode: 'cors',
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+    }
+  ).then((r)=>{return r.json()});
+}
+
 let caput = function(pv, value) {
   return fetch(grody_url + pv, {
       method: "POST",
@@ -207,7 +218,7 @@ let speed_knob = document.getElementById("chopper_speed_knob");
 let speed_knob_draggable = Draggable.create(speed_knob, {
   type:"rotation",
   bounds:{minRotation:0, maxRotation:360},
-  onDrag: async function() {
+  onDragEnd: async function() {
     if (speed_block) { return; }
     speed_block = true;
     let fraction = this.rotation/360;
@@ -221,7 +232,8 @@ let speed_knob_draggable = Draggable.create(speed_knob, {
 // Chopper phase knob
 let phase_block = false;
 let phase_knob = document.getElementById("chopper_phase_knob");
-let speed_phase_draggable = Draggable.create(phase_knob, {
+let rotation_snap = 60;
+let phase_knob_draggable = Draggable.create(phase_knob, {
   type:"rotation",
   bounds:{minRotation:0, maxRotation:360},
   onDrag: async function() {
@@ -233,7 +245,23 @@ let speed_phase_draggable = Draggable.create(phase_knob, {
     await caput("LabS-Utgard-VIP:Chop-Drv-0201:Chopper-Delay-SP", phase_sp);
     phase_block = false;
   }
+
 })[0];
+
+// sync the controls to the IOC value (for startup and if another interface is used)
+let sync_controls = async () => {
+  let enable = ((await caget("LabS-VIP:Chop-Drv-01:Spd")).value > 0.1);
+  console.log("enabled: ", enable);
+  chopper_enable_toggle.checked = enable;
+  let phase_sp = (await caget("LabS-Utgard-VIP:Chop-Drv-0201:Chopper-Delay-SP")).value/72e6*360;
+  console.log(phase_sp);
+  TweenLite.to(phase_knob, .7, {"rotation": phase_sp});
+  let speed_sp = (await caget("LabS-VIP:Chop-Drv-01:Spd_SP")).value/14*360;
+  TweenLite.to(speed_knob, .7, {"rotation": speed_sp});
+  setTimeout(sync_controls, 1000);
+};
+
+sync_controls();
 
 export {
   // synth,
@@ -247,5 +275,11 @@ export {
   widget,
   Poller,
   speed_poller,
+  caput,
+  caget,
+  phase_knob,
+  phase_knob_draggable,
+  Draggable,
+  TweenLite,
   // phase_poller,
 };
