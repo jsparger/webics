@@ -1,5 +1,6 @@
 import Tone from 'tone';
-import {Draggable, TweenLite} from 'gsap/all'
+import {Draggable, TweenLite} from 'gsap/all';
+import * as d3 from "d3";
 
 // A quick demo
 //set the bpm and time signature first
@@ -129,7 +130,14 @@ class Poller {
 
   async poll() {
     if (!this.enabled) return;
-    let json = await (await fetch(this.url)).json();
+    let json = null;
+    try {
+      json = await (await fetch(this.url)).json();
+    }
+    catch (err) {
+      console.log ("OH NO");
+      console.log(err);
+    }
     this.callback(json);
     setTimeout(this.poll.bind(this), this.interval);
   }
@@ -155,19 +163,21 @@ Tone.Transport.start();
 let grody_url = "http://localhost:5000/pv/";
 
 let speed_poller = new Poller(grody_url + "LabS-VIP:Chop-Drv-01:Spd", 1000, (json) => {
-	// console.log(json.value);
-  let fraction = json.value/14.0;
+  let speed = json && json.value || 0;
+  let fraction = speed/14.0;
 	widget.tempo.input = fraction > 0.01 ? fraction + 0.3 : 0;
 });
 
 // This works, but there is no phase control at the moment for chopper?
 let phase_poller = new Poller(grody_url + "LabS-Utgard-VIP:Chop-Drv-0201:Chopper-Delay-SP", 1000, (json) => {
+  if (!(json && json.value)) return;
   let ms = json.value/1000000.0;
   let phase = ms/71.4;
   let pitch = (phase-0.5)*12.0;
   // console.log(phase, ": ", pitch, ": ", json.value);
 	widget.pedal.pitch = pitch
 });
+
 
 let caget = async function(pv) {
   return fetch(grody_url + pv, {
@@ -210,8 +220,6 @@ chopper_enable_toggle.addEventListener("change", (event) => {
   }
 );
 
-
-
 // Chopper speed knob
 let speed_block = false;
 let speed_knob = document.getElementById("chopper_speed_knob");
@@ -248,6 +256,23 @@ let phase_knob_draggable = Draggable.create(phase_knob, {
 
 })[0];
 
+// use checkbox to fix speed to max, disable speed control, and show color wheel.
+let color_enable_toggle = document.getElementById("color_enable");
+let color_wheel = document.getElementById("color_wheel");
+color_enable_toggle.addEventListener("change", (event) => {
+  console.log("yo");
+  if (event.target.checked) {
+    speed_knob_draggable.disable();
+    color_wheel.style.display = "block";
+    TweenLite.to(speed_knob, .7, {"rotation": 360});
+    caput("LabS-VIP:Chop-Drv-01:Spd_SP", 14.0);
+  }
+  else {
+    speed_knob_draggable.enable();
+    color_wheel.style.display = "none";
+  }
+})
+
 // sync the controls to the IOC value (for startup and if another interface is used)
 let sync_controls = async () => {
   let enable = ((await caget("LabS-VIP:Chop-Drv-01:Spd")).value > 0.1);
@@ -262,6 +287,33 @@ let sync_controls = async () => {
 };
 
 sync_controls();
+
+
+let pi = Math.PI,
+    tau = 2 * pi,
+    n = 500;
+
+let width = 400,
+    height = 400,
+    outerRadius = width / 2,
+    innerRadius = outerRadius - 80;
+
+d3.select("#color_wheel")
+  .attr("preserveAspectRatio", "xMinYMin meet")
+  .attr("viewBox", `0 0 ${width} ${height}`)
+.append("g")
+    .attr("transform", "translate(" + width / 2 + "," + width / 2 + ")")
+  .selectAll("path")
+    .data(d3.range(0, tau, tau / n))
+  .enter().append("path")
+    .attr("d", d3.arc()
+        .outerRadius(outerRadius)
+        .innerRadius(innerRadius)
+        .startAngle(function(d) { return d; })
+        .endAngle(function(d) { return d + tau / n * 1.1; }))
+    .style("fill", function(d) { return d3.hsl(d * 360 / tau, 1, 0.5); });
+
+d3.select(self.frameElement).style("height", height + "px");
 
 export {
   // synth,
@@ -281,5 +333,6 @@ export {
   phase_knob_draggable,
   Draggable,
   TweenLite,
+  d3,
   // phase_poller,
 };

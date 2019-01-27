@@ -1,12 +1,13 @@
 .knobBG, .knob {
   /* position:absolute; */
-  background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/knob_Base.png');
+  background-image: url('/files/knob_Base.png');
   width:355px;
   height:355px;
 }
 .knob {
-  background-image: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/knob_Spinner.png');
+  background-image: url('/files/knob_Spinner.png');
   z-index: 1;
+  position: absolute;
 }
 /* .box {
   font-size:30px;

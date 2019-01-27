@@ -6,14 +6,29 @@ body {
   font-family: "Courier";
   font-variant: small-caps;
   font-size: 3vh;
+  /* background-color: #222; */
 }
 h1 {
    font-size: 10vh;
+   /* color: white; */
+}
+h2 {
+  /* color: white; */
 }
 .grid-container {
   display: grid;
   grid-template-columns: auto auto auto;
   align-items: center;
+}
+#color_wheel {
+  display: none;
+  /* height: 100%; */
+  /* width: 100%; */
+  z-index: -1;
+  position: relative;
+  /* position: absolute; */
+  /* position: static; */
+
 }
 </style>
 </head>
@@ -36,16 +51,17 @@ h1 {
     </div>
     <div align="center" style="display:table-cell;vertical-align:middle;">
       <label class="switch">
-        <input id="max_speed" type="checkbox">
+        <input id="color_enable" type="checkbox">
         <span class="slider round"></span>
       </label>
     </div>
     <div align="center">
       <div class="knobBG">
         <div class=knob id="chopper_phase_knob"></div>
+        <svg id="color_wheel"></svg>
       </div>
     </div>
-    <div align="center"><h2>Speed</h2></div>
+    <div align="center"><h2>Speed <span id=speed></span></h2></div>
     <div></div>
     <div align="center"><h2>Phase</h2></div>
 
