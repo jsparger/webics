@@ -162,10 +162,23 @@ Tone.Transport.start();
 
 let grody_url = "http://localhost:5000/pv/";
 
+let loader_duration = "2s";
+let loader = document.getElementById("loader");
+let set_loader_speed = () => {
+  loader.style.animationDuration = loader_duration;
+};
+// loader.addEventListener("webkitAnimationIteration", set_loader_speed,false);
+loader.addEventListener("animationiteration", set_loader_speed, false);
+// loader.addEventListener("oanimationiteration", set_loader_speed, false);
+
 let speed_poller = new Poller(grody_url + "LabS-VIP:Chop-Drv-01:Spd", 1000, (json) => {
   let speed = json && json.value || 0;
   let fraction = speed/14.0;
 	widget.tempo.input = fraction > 0.01 ? fraction + 0.3 : 0;
+  document.getElementById("speed_rb").innerHTML = `${Number.parseFloat(Math.abs(speed)).toFixed(1)}`
+
+  let period = Math.abs(1.0/(speed));
+  loader_duration = `${Number.parseFloat(period).toFixed(1)}s`;
 });
 
 // This works, but there is no phase control at the moment for chopper?
@@ -174,6 +187,8 @@ let phase_poller = new Poller(grody_url + "LabS-Utgard-VIP:Chop-Drv-0201:Chopper
   let ms = json.value/1000000.0;
   let phase = ms/71.4;
   let pitch = (phase-0.5)*12.0;
+  document.getElementById("phase_rb").innerHTML = `${Number.parseFloat(phase*360).toFixed(0)}`
+
   // console.log(phase, ": ", pitch, ": ", json.value);
 	widget.pedal.pitch = pitch
 });
@@ -205,7 +220,6 @@ let caput = function(pv, value) {
 // use checkbox to enable chopper:
 let chopper_enable_toggle = document.getElementById("chopper_enable");
 chopper_enable_toggle.addEventListener("change", (event) => {
-    console.log("CHECKBOX: ", event.target.checked);
     let pv = event.target.checked ? "LabS-VIP:Chop-Drv-01:Start_Cmd" : "LabS-VIP:Chop-Drv-01:Stop_Cmd";
 
     fetch(grody_url + pv, {
@@ -221,23 +235,30 @@ chopper_enable_toggle.addEventListener("change", (event) => {
 );
 
 // Chopper speed knob
+let speed_knob_busy = false;
 let speed_block = false;
 let speed_knob = document.getElementById("chopper_speed_knob");
 let speed_knob_draggable = Draggable.create(speed_knob, {
   type:"rotation",
   bounds:{minRotation:0, maxRotation:360},
+  onDrag: function() {
+    speed_knob_busy = true;
+  },
   onDragEnd: async function() {
     if (speed_block) { return; }
     speed_block = true;
     let fraction = this.rotation/360;
     let speed_sp = fraction*14;
-    console.log(this.x, fraction, speed_sp);
+    console.log(speed_sp);
     await caput("LabS-VIP:Chop-Drv-01:Spd_SP", speed_sp);
+    document.getElementById("speed_sp").innerHTML = `${Number.parseFloat(Math.abs(speed_sp)).toFixed(1)}`
     speed_block = false;
+    speed_knob_busy = false;
   }
 })[0];
 
 // Chopper phase knob
+let phase_knob_busy = false;
 let phase_block = false;
 let phase_knob = document.getElementById("chopper_phase_knob");
 let rotation_snap = 60;
@@ -245,6 +266,7 @@ let phase_knob_draggable = Draggable.create(phase_knob, {
   type:"rotation",
   bounds:{minRotation:0, maxRotation:360},
   onDrag: async function() {
+    phase_knob_busy = true;
     if (phase_block) { return; }
     phase_block = true;
     let fraction = this.rotation/360;
@@ -252,6 +274,9 @@ let phase_knob_draggable = Draggable.create(phase_knob, {
     console.log(this.x, fraction, phase_sp);
     await caput("LabS-Utgard-VIP:Chop-Drv-0201:Chopper-Delay-SP", phase_sp);
     phase_block = false;
+  },
+  onDragEnd: function() {
+    phase_knob_busy = false;
   }
 
 })[0];
@@ -259,10 +284,12 @@ let phase_knob_draggable = Draggable.create(phase_knob, {
 // use checkbox to fix speed to max, disable speed control, and show color wheel.
 let color_enable_toggle = document.getElementById("color_enable");
 let color_wheel = document.getElementById("color_wheel");
+let previous_speed_sp = 14;
 color_enable_toggle.addEventListener("change", (event) => {
   console.log("yo");
   if (event.target.checked) {
     speed_knob_draggable.disable();
+    previous_speed_sp = speed_knob_draggable.rotation/360*14;
     color_wheel.style.display = "block";
     TweenLite.to(speed_knob, .7, {"rotation": 360});
     caput("LabS-VIP:Chop-Drv-01:Spd_SP", 14.0);
@@ -270,19 +297,25 @@ color_enable_toggle.addEventListener("change", (event) => {
   else {
     speed_knob_draggable.enable();
     color_wheel.style.display = "none";
+    TweenLite.to(speed_knob, .7, {"rotation": previous_speed_sp/14*360});
+    caput("LabS-VIP:Chop-Drv-01:Spd_SP", previous_speed_sp);
   }
 })
 
 // sync the controls to the IOC value (for startup and if another interface is used)
 let sync_controls = async () => {
   let enable = ((await caget("LabS-VIP:Chop-Drv-01:Spd")).value > 0.1);
-  console.log("enabled: ", enable);
   chopper_enable_toggle.checked = enable;
+  document.getElementById("loader").style.animationPlayState = enable ? "" : "paused";
   let phase_sp = (await caget("LabS-Utgard-VIP:Chop-Drv-0201:Chopper-Delay-SP")).value/72e6*360;
-  console.log(phase_sp);
-  TweenLite.to(phase_knob, .7, {"rotation": phase_sp});
-  let speed_sp = (await caget("LabS-VIP:Chop-Drv-01:Spd_SP")).value/14*360;
-  TweenLite.to(speed_knob, .7, {"rotation": speed_sp});
+  if (!phase_knob_busy) {
+    TweenLite.to(phase_knob, .7, {"rotation": phase_sp});
+  }
+  let speed_sp = (await caget("LabS-VIP:Chop-Drv-01:Spd_SP")).value;
+  if (!speed_knob_busy) {
+    TweenLite.to(speed_knob, .7, {"rotation": speed_sp/14*360});
+    document.getElementById("speed_sp").innerHTML = `${Number.parseFloat(Math.abs(speed_sp)).toFixed(1)}`
+  }
   setTimeout(sync_controls, 1000);
 };
 

@@ -30,6 +30,30 @@ h2 {
   /* position: static; */
 
 }
+#speed_h2 {
+  color: #3498db
+}
+
+#loader {
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 50px;
+  height: 50px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body>
@@ -38,22 +62,37 @@ h2 {
       <h1>Chopper Control</h1>
     </div>
     <div align="center">
-    <label class="switch">
-      <input id="chopper_enable" type="checkbox">
-      <span class="slider round"></span>
-    </label>
+    <div align="center">
+      <label class="switch">
+        <input id="chopper_enable" type="checkbox">
+        <span class="slider round"></span>
+      </label>
     </div>
-    <div></div>
+    <div>
+      </br>
+      <span align=center>Enable</span>
+    </div>
+    </div>
+    <div align="center">
+      <div id="loader" align="center"></div>
+      <h2 id=speed_h2><span id=speed_rb></span> hz </h2>
+    </div>
     <div align="center">
       <div class="knobBG">
         <div class=knob id="chopper_speed_knob"></div>
       </div>
     </div>
-    <div align="center" style="display:table-cell;vertical-align:middle;">
-      <label class="switch">
-        <input id="color_enable" type="checkbox">
-        <span class="slider round"></span>
-      </label>
+    <div align="center">
+      <div align="center" style="display:table-cell;vertical-align:middle;">
+        <label class="switch">
+          <input id="color_enable" type="checkbox">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      <div>
+        </br>
+        <span align="center">Max</span>
+      </div>
     </div>
     <div align="center">
       <div class="knobBG">
@@ -61,9 +100,13 @@ h2 {
         <svg id="color_wheel"></svg>
       </div>
     </div>
-    <div align="center"><h2>Speed <span id=speed></span></h2></div>
+    <div align="center">
+      <h2>Speed  <span id=speed_sp></span> hz</h2>
+      <!-- </br> -->
+      <!-- <h2>Target </h2> -->
+    </div>
     <div></div>
-    <div align="center"><h2>Phase</h2></div>
+    <div align="center"><h2>Phase <span id=phase_rb></span> deg</h2></div>
 
 </div>
 
