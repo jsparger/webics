@@ -7,49 +7,63 @@ import * as d3 from "d3";
 Tone.Transport.timeSignature = [6, 4];
 Tone.Transport.bpm.value = 30;
 
-// //a little reverb
-// var reverb = new Tone.Freeverb({
-//   "roomSize" : 0.2,
-//   "wet" : 0.9
-// }).toMaster();
-//
-// // a pitch shift control
+//a little reverb
+var reverb = new Tone.Freeverb({
+  "roomSize" : 0.2,
+  "wet" : 0.9
+}).toMaster();
+
+// a pitch shift control
 // var pitchShift = new Tone.PitchShift({
 //   "wet" : 1.0,
 // }).connect(reverb);
-//
-// //the synth settings
-// var synthSettings = {
-//   "oscillator": {
-//     // "detune": 0,
-//     "type": "sine",
-//     // "partials" : [2, 1, 2, 2],
-//     // "phase": 0,
-//     // "volume": 0
-//   },
-//   // "envelope": {
-//   //   "attack": 0.005,
-//   //   "decay": 0.3,
-//   //   "sustain": 0.2,
-//   //   "release": 1,
-//   // },
-//   "portamento": 0.05,
-//   // "volume": -20
-// };
-//
-// // create the synth.
-// var synth = new Tone.Synth(synthSettings).connect(pitchShift);
-//
-// // create the sequence
+
+//the synth settings
+
+let settings = {
+    "frequency": "E1",
+    "type": "triangle3",
+  };
+
+// create the synth.
+var osc = new Tone.Oscillator(settings).connect(reverb);
+// osc.start();
+
+// create the sequence
 // var seq = new Tone.Sequence(function(time, note){
 // 			synth.triggerAttackRelease(note, "8n", time);
-// 		}, ["E1", "F2", "F#3", "G4", "D#3", "F4", "G#4", "A#4", "A3", "F#3", "D3", "A#2"], "8n").start();
-//
-// // start the "song"
+// 		}, ["E1"], "8n").start();
+
+// start the "song"
 // Tone.Transport.start("+0.1");
-//
-// // ramp the tempo up to 180 over 10 seconds.
+
+// ramp the tempo up to 180 over 10 seconds.
 // Tone.Transport.bpm.linearRampTo(180, 10);
+
+let grody_url = "http://localhost:5000/pv/";
+
+let caget = async function(pv) {
+  return fetch(grody_url + pv, {
+      method: "GET",
+      mode: 'cors',
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+    }
+  ).then((r)=>{return r.json()});
+}
+
+let caput = function(pv, value) {
+  return fetch(grody_url + pv, {
+      method: "POST",
+      mode: 'cors',
+      headers: new Headers({
+        'content-type': 'application/json'
+      }),
+      body: JSON.stringify({"value": value}),
+    }
+  );
+}
 
 function convert(value, zero, slope) {
   return (value - zero)/(slope);
@@ -100,6 +114,9 @@ class SoundWidget {
     // 		}, ["C3",], "8n").start();
     this.player = new Tone.Player({
       url : "/files/boom_bap_drum.wav",
+      // url : "/files/smooth-melody.wav",
+      // url : "/files/kygo-style-chords.wav",
+      // url : "/files/country-waltz.mp3",
       loop : true,
     }).connect(this.pedal);
 
@@ -111,12 +128,13 @@ class SoundWidget {
   }
 
   _set_tempo(value) {
-    // Tone.Transport.bpm.linearRampTo(value, 1);
+    Tone.Transport.bpm.linearRampTo(value*82, 1);
     this.player.playbackRate = value;
   }
 
   _set_effect(value) {
     this.pedal.wet.linearRampTo(value, 1);
+    // osc.frequency.linearRampTo(osc.frequency*(1+value));
   }
 };
 
@@ -160,7 +178,7 @@ let widget = new SoundWidget({
 
 Tone.Transport.start();
 
-let grody_url = "http://localhost:5000/pv/";
+
 
 let loader_duration = "2s";
 let loader = document.getElementById("loader");
@@ -176,6 +194,8 @@ let speed_poller = new Poller(grody_url + "LabS-VIP:Chop-Drv-01:Spd", 1000, (jso
   let fraction = speed/14.0;
 	widget.tempo.input = fraction > 0.01 ? fraction + 0.3 : 0;
   document.getElementById("speed_rb").innerHTML = `${Number.parseFloat(Math.abs(speed)).toFixed(1)}`
+
+  osc.frequency.linearRampTo(osc.toFrequency('E1')*(1+2*fraction), 1.0);
 
   let period = Math.abs(1.0/(speed));
   loader_duration = `${Number.parseFloat(period).toFixed(1)}s`;
@@ -194,28 +214,7 @@ let phase_poller = new Poller(grody_url + "LabS-Utgard-VIP:Chop-Drv-0201:Chopper
 });
 
 
-let caget = async function(pv) {
-  return fetch(grody_url + pv, {
-      method: "GET",
-      mode: 'cors',
-      headers: new Headers({
-        'content-type': 'application/json'
-      }),
-    }
-  ).then((r)=>{return r.json()});
-}
 
-let caput = function(pv, value) {
-  return fetch(grody_url + pv, {
-      method: "POST",
-      mode: 'cors',
-      headers: new Headers({
-        'content-type': 'application/json'
-      }),
-      body: JSON.stringify({"value": value}),
-    }
-  );
-}
 
 // use checkbox to enable chopper:
 let chopper_enable_toggle = document.getElementById("chopper_enable");
@@ -367,5 +366,6 @@ export {
   Draggable,
   TweenLite,
   d3,
+  osc,
   // phase_poller,
 };
